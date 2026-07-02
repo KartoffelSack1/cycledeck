@@ -645,7 +645,7 @@ function Stacks({ state, active, planned, setModal, logDose }) {
     </div>
     <div class="grid2" style=${{ marginTop: 14 }}>
       <div class="card stat"><div class="label">Active</div><div class="stat-num mono">${active.length}</div></div>
-      <div class="card stat"><div class="label">Total Logs</div><div class="stat-num mono">${totalLogs}</div></div>
+      <div class="card stat tap" onClick=${() => setModal({ type: "history" })}><div class="label-row"><span class="label">Total Logs</span>${Ic.chev}</div><div class="stat-num mono">${totalLogs}</div></div>
     </div>
     <div style=${{ marginTop: 14 }}>
       ${active.length === 0 && html`<div class="card muted center">No active compounds yet.</div>`}
@@ -673,7 +673,7 @@ function LogTab({ state, active, setModal }) {
     return true;
   });
   return html`
-    <div class="head"><div><div class="eyebrow">Notes</div><div class="h1">The Log</div></div><button class="icon-btn" onClick=${() => setModal({ type: "note" })}>${Ic.plus}</button></div>
+    <div class="head"><div><div class="eyebrow">Journal</div><div class="h1">Notes</div></div><button class="icon-btn" onClick=${() => setModal({ type: "note" })}>${Ic.plus}</button></div>
     <div class="card">
       <div class="search">${Ic.search}<input class="search-input" placeholder="Search entries..." value=${q} onInput=${(e) => setQ(e.target.value)} /></div>
       <div class="hr" style=${{ margin: "6px 0 14px" }}></div>
