@@ -275,6 +275,75 @@ select.input{-webkit-appearance:none;appearance:none}
 .wk-comp{font-size:15px;color:#fff}
 .wk-item .muted{margin-left:auto}
 .wk-rest{color:var(--faint);font-size:14px;padding:2px 0}
+
+/* ---- v3: iOS-native feel ---- */
+:root{ --ease-ios: cubic-bezier(.32,.72,0,1); }
+
+/* springy press states — the core "it reacts" feeling */
+.card.tap, .proto-card, .split-half, .icon-btn, .pill-btn, .chip, .day,
+.primary, .danger, .mini, .log-btn, .seg-item, .tab, .lib-item, .lib-toggle,
+.grow, .note-card, .card.empty, .proto-row, .x, .xmini, .dots, .today-row{
+  transition: transform .18s var(--ease-ios), background-color .18s ease, opacity .18s ease, border-color .18s ease;
+}
+.card.tap:active, .proto-card:active, .note-card:active, .card.empty:active{ transform: scale(.982); }
+.split-half:active{ transform: scale(.97); }
+.icon-btn:active, .pill-btn:active, .x:active{ transform: scale(.92); }
+.chip:active, .day:active, .mini:active, .seg-item:active, .lib-item:active{ transform: scale(.95); }
+.primary:active, .danger:active, .lib-toggle:active{ transform: scale(.975); }
+.log-btn:active{ transform: scale(.9); opacity:.6 }
+.grow:active{ transform: scale(.985); opacity:.75 }
+.proto-row:active{ opacity:.6 }
+.dots:active, .xmini:active{ transform: scale(.85); opacity:.6 }
+
+/* tab bar: active pill feels physical */
+.tab{ transition: transform .22s var(--ease-ios), color .22s ease, background-color .22s ease; }
+.tab:active{ transform: scale(.86); }
+.tab-on{ animation: tabpop .28s var(--ease-ios); }
+@keyframes tabpop{ 0%{transform:scale(.9)} 60%{transform:scale(1.04)} 100%{transform:scale(1)} }
+
+/* tab content: subtle rise-in on switch */
+.wrap > *{ animation: none; }
+.screen-in{ animation: screenin .3s var(--ease-ios) both; }
+@keyframes screenin{ from{ opacity:0; transform: translateY(7px); } to{ opacity:1; transform: translateY(0); } }
+
+/* sheets: native slide-up + backdrop fade */
+.sheet-bg{ animation: bgfade .25s ease both; }
+@keyframes bgfade{ from{ background: rgba(0,0,0,0); backdrop-filter: blur(0px); } to{ background: rgba(0,0,0,.72); backdrop-filter: blur(6px); } }
+.sheet{ animation: sheetup .38s var(--ease-ios) both; }
+@keyframes sheetup{ from{ transform: translateY(100%); } to{ transform: translateY(0); } }
+.sheet-bg.closing{ animation: bgfadeout .22s ease both; }
+@keyframes bgfadeout{ from{ background: rgba(0,0,0,.72); backdrop-filter: blur(6px);} to{ background: rgba(0,0,0,0); backdrop-filter: blur(0px);} }
+.sheet-bg.closing .sheet{ animation: sheetdown .26s var(--ease-ios) both; }
+@keyframes sheetdown{ from{ transform: translateY(0);} to{ transform: translateY(105%);} }
+
+/* toast: rise + settle */
+.toast{ animation: toastin .32s var(--ease-ios) both; }
+@keyframes toastin{ from{ opacity:0; transform: translate(-50%, 10px) scale(.95); } to{ opacity:1; transform: translate(-50%, 0) scale(1); } }
+
+/* grab handle on sheets, like native modals */
+.sheet{ position: relative; }
+.sheet:before{ content:""; position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  width:38px; height:5px; border-radius:5px; background:rgba(255,255,255,.18); }
+.sheet-head{ margin-top: 6px; }
+
+/* bar fills ease like native progress */
+.bar-fill{ transition: width .5s var(--ease-ios); }
+
+/* smooth momentum scrolling in sheets */
+.sheet, .lib-list{ -webkit-overflow-scrolling: touch; }
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  *, .sheet, .sheet-bg, .toast, .tab-on{ animation: none !important; transition: none !important; }
+}
+
+/* ---- v4: bloodwork history ---- */
+.panel-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;transition:opacity .18s ease}
+.panel-row:last-child{border-bottom:none}
+.panel-row:active{opacity:.6}
+.lab-cell{border-radius:10px;padding:4px 6px;margin:-4px -6px;transition:background-color .18s ease,transform .18s var(--ease-ios)}
+.lab-trendable{cursor:pointer}
+.lab-trendable:active{background:#17181C;transform:scale(.97)}
 </style>
 </head>
 <body>
@@ -419,7 +488,7 @@ function seed() {
     ],
     doseLogs: [],
     weights: [],
-    bp: [], notes: [], snapshots: [], inventory: [], bloodwork: { date: "", markers: {}, custom: [] },
+    bp: [], notes: [], snapshots: [], inventory: [], bloodwork: { date: "", markers: {}, custom: [] }, bloodPanels: [],
   };
 }
 function migrate(s) {
@@ -430,6 +499,13 @@ function migrate(s) {
   s.inventory = (s.inventory || []).filter((i) => i.protocolId); // new shape only
   s.bloodwork = s.bloodwork || { date: "", markers: {}, custom: [] };
   s.openDays = s.openDays || []; s.recordStreak = s.recordStreak || 0; if (s.goalWeight === undefined) s.goalWeight = null;
+  // migrate single bloodwork -> panels
+  if (!s.bloodPanels) {
+    s.bloodPanels = [];
+    const bw = s.bloodwork;
+    const hasData = bw && (Object.values(bw.markers || {}).some((m) => m?.v?.trim?.()) || (bw.custom || []).some((c) => c.v?.trim?.()));
+    if (hasData) s.bloodPanels.push({ id: uid("bp"), date: bw.date || new Date().toISOString().slice(0, 10), markers: bw.markers || {}, custom: bw.custom || [] });
+  }
   return s;
 }
 
@@ -456,6 +532,7 @@ function App() {
   const active = state.protocols.filter((p) => p.status === "active");
   const planned = state.protocols.filter((p) => p.status === "planned");
   const streak = (() => { const set = new Set((state.openDays || []).map(startOfDay)); let n = 0, d = startOfDay(now()); while (set.has(d)) { n++; d -= DAY; } return n; })();
+  useEffect(() => { if (streak > (state.recordStreak || 0)) save((s) => ({ ...s, recordStreak: streak })); }, [streak]);
 
   const logDose = (p) => {
     const today = startOfDay(now());
@@ -467,10 +544,12 @@ function App() {
   return html`
     <div class="app">
       <div class="wrap">
-        ${tab === "home" && html`<${Home} ...${ctx} />`}
-        ${tab === "stacks" && html`<${Stacks} ...${ctx} />`}
-        ${tab === "log" && html`<${LogTab} ...${ctx} />`}
-        ${tab === "insights" && html`<${Insights} ...${ctx} />`}
+        <div key=${tab} class="screen-in">
+          ${tab === "home" && html`<${Home} ...${ctx} />`}
+          ${tab === "stacks" && html`<${Stacks} ...${ctx} />`}
+          ${tab === "log" && html`<${LogTab} ...${ctx} />`}
+          ${tab === "insights" && html`<${Insights} ...${ctx} />`}
+        </div>
       </div>
       <${TabBar} tab=${tab} setTab=${setTab} />
       ${toast && html`<div class="toast">${toast}</div>`}
@@ -486,7 +565,9 @@ function Home({ state, active, streak, setModal, logDose }) {
   const dlt = lw && pw ? +(kgTo(lw.kg, u) - kgTo(pw.kg, u)).toFixed(1) : null;
   const bpAll = [...state.bp].sort((a, b) => a.t - b.t); const lbp = bpAll[bpAll.length - 1];
   const anchor = active.find((p) => p.cls === "androgen") || active[0];
-  const measured = countMeasured(state.bloodwork);
+  const lp = latestPanel(state);
+  const measured = countMeasured(lp);
+  const panelsN = (state.bloodPanels || []).length;
   const dow = new Date().getDay();
   const dueToday = active.filter((p) => (p.days || []).includes(dow));
   const byPeriod = PORDER.map((k) => ({ k, label: PERIODS[k].label, items: dueToday.filter((p) => periodOf(p) === k) })).filter((g) => g.items.length);
@@ -562,14 +643,11 @@ function Home({ state, active, streak, setModal, logDose }) {
       <${WeekStrip} doseLogs=${state.doseLogs} />
     </div>
 
-    <div class="grid2" style=${{ marginTop: 14 }}>
-      <div class="card tap sq" onClick=${() => setModal({ type: "snapshot" })}>
-        <div class="label-row"><span class="label">Snapshots</span>${Ic.chev}</div>
-        <div class="mini-empty"><div class="muted">${state.snapshots.length ? state.snapshots.length + " logged" : "No snapshots yet"}</div><div class="link">Add snapshot</div></div>
-      </div>
-      <div class="card tap sq" onClick=${() => setModal({ type: "blood" })}>
-        <div class="label-row"><span class="label">Bloodwork</span>${Ic.chev}</div>
-        <div class="mini-empty"><div class="muted">${measured ? measured + " markers" : "No labs yet"}</div><div class="link">${measured ? "View / edit" : "Import results"}</div></div>
+    <div class="card tap" style=${{ marginTop: 14 }} onClick=${() => setModal({ type: "bloodhub" })}>
+      <div class="label-row"><span class="label">Bloodwork</span>${Ic.chev}</div>
+      <div class="between" style=${{ marginTop: 12 }}>
+        <div class="muted">${panelsN ? panelsN + (panelsN === 1 ? " panel" : " panels") + " · " + measured + " markers" : "No labs yet"}</div>
+        <div class="link">${panelsN ? "View history" : "Add first panel"}</div>
       </div>
     </div>
 
@@ -701,7 +779,8 @@ function Insights({ state, setModal }) {
   const wf = w.length ? wv[0] : null; const wdl = wcur != null && wf != null ? +(wcur - wf).toFixed(1) : null;
   const wmin = wv.length ? Math.min(...wv) : null, wmax = wv.length ? Math.max(...wv) : null, wavg = wv.length ? wv.reduce((a, b) => a + b, 0) / wv.length : null;
   const bpAll = [...state.bp].sort((a, b) => a.t - b.t); const bp = bpAll.filter((x) => x.t >= cutoff); const lbp = bpAll[bpAll.length - 1];
-  const measured = countMeasured(state.bloodwork);
+  const lp = latestPanel(state);
+  const measured = countMeasured(lp);
   return html`
     <div class="head"><div><div class="eyebrow">Insights</div><div class="h1">Track your metrics</div></div></div>
     <div class="card">
@@ -725,8 +804,9 @@ function Insights({ state, setModal }) {
     </div>
 
     ${measured > 0 && html`<div class="card" style=${{ marginTop: 14 }}>
-      <div class="ins-title">Latest labs ${state.bloodwork.date ? html`<span class="muted sm">· ${fmtShort(new Date(state.bloodwork.date).getTime())}</span>` : ""}</div>
-      <div class="lab-grid" style=${{ marginTop: 12 }}>${labList(state.bloodwork).map((m, i) => html`<div key=${i}><div class="muted sm ellip">${m.label}</div><div class="mono lab-v">${m.v} <span class="muted sm">${m.u}</span></div></div>`)}</div>
+      <div class="between"><div class="ins-title">Latest labs ${lp && lp.date ? html`<span class="muted sm">· ${fmtShort(new Date(lp.date).getTime())}</span>` : ""}</div><button class="mini" onClick=${() => setModal({ type: "bloodhub" })}>History</button></div>
+      <div class="lab-grid" style=${{ marginTop: 12 }}>${labList(lp).map((m, i) => { const n = markerSeries(state, m.key).length; return html`<div key=${i} class="lab-cell ${n >= 2 ? "lab-trendable" : ""}" onClick=${() => n >= 2 && setModal({ type: "markertrend", data: { key: m.key, label: m.label } })}><div class="muted sm ellip">${m.label} ${n >= 2 ? Ic.spark : ""}</div><div class="mono lab-v">${m.v} <span class="muted sm">${m.u}</span></div></div>`; })}</div>
+      ${(state.bloodPanels || []).length >= 2 && html`<div class="muted sm" style=${{ marginTop: 12 }}>Tap a marker to see its trend across panels.</div>`}
     </div>`}
     <div class="foot"></div>`;
 }
@@ -760,7 +840,19 @@ function TabBar({ tab, setTab }) {
 
 /* ============================ MODALS ========================= */
 function countMeasured(bw) { if (!bw) return 0; let n = 0; for (const [k] of BLOOD) if (bw.markers?.[k]?.v?.trim?.()) n++; for (const c of (bw.custom || [])) if (c.v?.trim?.()) n++; return n; }
-function labList(bw) { const out = []; for (const [k, label, du] of BLOOD) { const e = bw.markers?.[k]; if (e?.v?.trim?.()) out.push({ label, v: e.v, u: e.u || du }); } for (const c of (bw.custom || [])) if (c.v?.trim?.()) out.push({ label: c.name || "—", v: c.v, u: c.u || "" }); return out; }
+function labList(bw) { const out = []; for (const [k, label, du] of BLOOD) { const e = bw.markers?.[k]; if (e?.v?.trim?.()) out.push({ key: k, label, v: e.v, u: e.u || du }); } for (const c of (bw.custom || [])) if (c.v?.trim?.()) out.push({ key: "c:" + (c.name || ""), label: c.name || "—", v: c.v, u: c.u || "" }); return out; }
+function panelsSorted(s) { return [...(s.bloodPanels || [])].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0)); }
+function latestPanel(s) { const p = panelsSorted(s); return p.length ? p[p.length - 1] : null; }
+function markerSeries(s, key) {
+  const out = [];
+  for (const p of panelsSorted(s)) {
+    let raw = null, u = "";
+    if (key.startsWith("c:")) { const name = key.slice(2); const c = (p.custom || []).find((x) => (x.name || "") === name && x.v?.trim?.()); if (c) { raw = c.v; u = c.u || ""; } }
+    else { const e = p.markers?.[key]; if (e?.v?.trim?.()) { raw = e.v; u = e.u || ""; } }
+    if (raw != null) { const num = parseFloat(String(raw).replace(",", ".").replace(/[^0-9.\-]/g, "")); if (!isNaN(num)) out.push({ t: new Date(p.date || 0).getTime() || 0, v: num, raw, u }); }
+  }
+  return out;
+}
 function invRemaining(item, doseLogs) { const used = doseLogs.filter((l) => l.protocolId === item.protocolId && l.t >= (item.stockedAt || 0)).reduce((s, l) => s + (l.dose || 0), 0); return (item.stockedAmount || 0) - used; }
 
 function Modals(props) {
@@ -771,18 +863,21 @@ function Modals(props) {
   if (t === "weight") return html`<${WeightModal} ...${props} />`;
   if (t === "bp") return html`<${BPModal} ...${props} />`;
   if (t === "blood") return html`<${BloodModal} ...${props} />`;
+  if (t === "bloodhub") return html`<${BloodHub} ...${props} />`;
+  if (t === "markertrend") return html`<${MarkerTrend} ...${props} />`;
   if (t === "note") return html`<${NoteModal} ...${props} />`;
   if (t === "calc") return html`<${Calc} ...${props} />`;
   if (t === "inventory") return html`<${Inventory} ...${props} />`;
-  if (t === "snapshot") return html`<${SnapshotModal} ...${props} />`;
   if (t === "history") return html`<${DoseHistory} ...${props} />`;
   if (t === "week") return html`<${WeekModal} ...${props} />`;
   return null;
 }
 
 function Sheet({ title, onClose, children }) {
-  return html`<div class="sheet-bg" onClick=${onClose}><div class="sheet" onClick=${(e) => e.stopPropagation()}>
-    <div class="sheet-head"><h2>${title}</h2><button class="x" onClick=${onClose}>${Ic.x}</button></div>${children}</div></div>`;
+  const [closing, setClosing] = useState(false);
+  const close = () => { if (closing) return; setClosing(true); setTimeout(onClose, 240); };
+  return html`<div class="sheet-bg ${closing ? "closing" : ""}" onClick=${close}><div class="sheet" onClick=${(e) => e.stopPropagation()}>
+    <div class="sheet-head"><h2>${title}</h2><button class="x" onClick=${close}>${Ic.x}</button></div>${children}</div></div>`;
 }
 function Field({ label, children, flex }) { return html`<div class="field" style=${flex ? { flex: 1 } : {}}><div class="field-label">${label}</div>${children}</div>`; }
 
@@ -908,23 +1003,58 @@ function BPModal({ state, save, setModal }) {
   <//>`;
 }
 
-function BloodModal({ state, save, setModal }) {
-  const bw = state.bloodwork || { date: "", markers: {}, custom: [] };
-  const [date, setDate] = useState(bw.date || "");
-  const [m, setM] = useState(() => { const o = {}; BLOOD.forEach(([k, l, du]) => { const e = bw.markers?.[k]; o[k] = { v: e?.v || "", u: e?.u || du }; }); return o; });
-  const [custom, setCustom] = useState((bw.custom || []).map((c) => ({ ...c })));
+function BloodHub({ state, save, setModal }) {
+  const panels = [...panelsSorted(state)].reverse();
+  const del = (id) => { if (confirm("Delete this panel?")) save((s) => ({ ...s, bloodPanels: s.bloodPanels.filter((p) => p.id !== id) })); };
+  return html`<${Sheet} title="Bloodwork history" onClose=${() => setModal(null)}>
+    <button class="primary" style=${{ marginTop: 0, marginBottom: 16 }} onClick=${() => setModal({ type: "blood" })}>${Ic.plus} New panel</button>
+    ${panels.length === 0 && html`<div class="muted center" style=${{ padding: "10px 0" }}>No panels yet. Add your first draw.</div>`}
+    ${panels.map((p) => html`<div key=${p.id} class="panel-row" onClick=${() => setModal({ type: "blood", data: p })}>
+      <div style=${{ flex: 1 }}>
+        <div class="gt">${p.date ? new Date(p.date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "No date"}</div>
+        <div class="muted sm">${countMeasured(p)} markers</div>
+      </div>
+      <button class="xmini" onClick=${(e) => { e.stopPropagation(); del(p.id); }}>${Ic.trash}</button>
+      ${Ic.chev}
+    </div>`)}
+  <//>`;
+}
+
+function MarkerTrend({ state, modal, setModal }) {
+  const { key, label } = modal.data;
+  const series = markerSeries(state, key);
+  const last = series[series.length - 1], first = series[0];
+  const dlt = last && first ? +(last.v - first.v).toFixed(2) : null;
+  return html`<${Sheet} title=${label} onClose=${() => setModal(null)}>
+    <div class="ins-sub" style=${{ marginTop: -6 }}>${last ? last.raw + " " + last.u : "—"} ${dlt != null && dlt !== 0 ? html`<span style=${{ color: "var(--dim)" }}>${dlt > 0 ? "+" : ""}${dlt} since first</span>` : ""}</div>
+    ${series.length >= 2 ? html`<${LineChart} series=${[{ data: series, color: "#FF5C6C", area: true }]} />` : html`<div class="notenough">Need 2+ panels with this marker</div>`}
+    <div style=${{ marginTop: 16 }}>
+      ${[...series].reverse().map((s, i) => html`<div key=${i} class="snap-row"><div><span class="mono" style=${{ fontWeight: 700 }}>${s.raw} <span class="muted sm">${s.u}</span></span><div class="muted sm">${s.t ? fmtShort(s.t) : "—"}</div></div></div>`)}
+    </div>
+  <//>`;
+}
+
+function BloodModal({ state, save, modal, setModal }) {
+  const init = (modal && modal.data) || null; const editing = !!(init && init.id);
+  const [date, setDate] = useState(init?.date || new Date().toISOString().slice(0, 10));
+  const [m, setM] = useState(() => { const o = {}; BLOOD.forEach(([k, l, du]) => { const e = init?.markers?.[k]; o[k] = { v: e?.v || "", u: e?.u || du }; }); return o; });
+  const [custom, setCustom] = useState((init?.custom || []).map((c) => ({ ...c })));
   const sv = (k, fld, val) => setM((s) => ({ ...s, [k]: { ...s[k], [fld]: val } }));
   const cc = (id, fld, val) => setCustom((c) => c.map((x) => x.id === id ? { ...x, [fld]: val } : x));
-  const commit = () => { save((s) => ({ ...s, bloodwork: { date, markers: m, custom } })); setModal(null); };
-  return html`<${Sheet} title="Bloodwork" onClose=${() => setModal(null)}>
-    <div class="muted sm" style=${{ marginBottom: 14, lineHeight: 1.5 }}>Enter your latest panel. Leave anything blank you didn't measure — units are editable.</div>
-    <${Field} label="Date drawn (optional)"><input class="input" type="date" value=${date} onInput=${(e) => setDate(e.target.value)} /><//>
+  const commit = () => {
+    const rec = { id: init?.id || uid("bp"), date, markers: m, custom };
+    save((s) => ({ ...s, bloodPanels: editing ? s.bloodPanels.map((p) => p.id === rec.id ? rec : p) : [...(s.bloodPanels || []), rec] }));
+    setModal({ type: "bloodhub" });
+  };
+  return html`<${Sheet} title=${editing ? "Edit panel" : "New panel"} onClose=${() => setModal({ type: "bloodhub" })}>
+    <div class="muted sm" style=${{ marginBottom: 14, lineHeight: 1.5 }}>Leave anything blank you didn't measure — units are editable.</div>
+    <${Field} label="Date drawn"><input class="input" type="date" value=${date} onInput=${(e) => setDate(e.target.value)} /><//>
     ${BLOOD.map(([k, l]) => html`<div key=${k} class="blood-row"><div class="blood-l" style=${{ color: m[k].v ? "var(--txt)" : "var(--dim)" }}>${l}</div><input class="input bv mono" placeholder="—" value=${m[k].v} onInput=${(e) => sv(k, "v", e.target.value)} /><input class="input bu" value=${m[k].u} onInput=${(e) => sv(k, "u", e.target.value)} /></div>`)}
     <div class="hr" style=${{ margin: "16px 0" }}></div>
     <div class="label" style=${{ marginBottom: 10 }}>Custom markers</div>
     ${custom.map((c) => html`<div key=${c.id} class="blood-row"><input class="input" style=${{ flex: 1 }} placeholder="Name" value=${c.name} onInput=${(e) => cc(c.id, "name", e.target.value)} /><input class="input bv mono" placeholder="—" value=${c.v} onInput=${(e) => cc(c.id, "v", e.target.value)} /><input class="input bu" placeholder="unit" value=${c.u} onInput=${(e) => cc(c.id, "u", e.target.value)} /><button class="xmini" onClick=${() => setCustom((cs) => cs.filter((x) => x.id !== c.id))}>${Ic.x}</button></div>`)}
     <button class="mini full" onClick=${() => setCustom((c) => [...c, { id: uid("c"), name: "", v: "", u: "" }])}>${Ic.plus} Add marker</button>
-    <button class="primary" style=${{ marginTop: 16 }} onClick=${commit}>Save bloodwork</button>
+    <button class="primary" style=${{ marginTop: 16 }} onClick=${commit}>${editing ? "Save changes" : "Save panel"}</button>
   <//>`;
 }
 
@@ -987,19 +1117,6 @@ function Inventory({ state, save, setModal }) {
   <//>`;
 }
 
-function SnapshotModal({ state, save, setModal }) {
-  const u = state.units; const [w, setW] = useState(""); const [bf, setBf] = useState(""); const [waist, setWaist] = useState(""); const [note, setNote] = useState("");
-  const commit = () => { save((s) => ({ ...s, snapshots: [...s.snapshots, { id: uid("s"), t: now(), kg: w ? toKg(+w, u) : null, bodyFat: bf ? +bf : null, waist: waist ? +waist : null, note }] })); setModal(null); };
-  const snaps = [...state.snapshots].sort((a, b) => b.t - a.t);
-  return html`<${Sheet} title="Progress snapshot" onClose=${() => setModal(null)}>
-    <div class="row2"><${Field} label=${"Weight (" + u + ")"} flex><input class="input mono" type="number" step="0.1" placeholder="80.0" value=${w} onInput=${(e) => setW(e.target.value)} /><//><${Field} label="Body fat (%)" flex><input class="input mono" type="number" step="0.1" placeholder="—" value=${bf} onInput=${(e) => setBf(e.target.value)} /><//></div>
-    <${Field} label="Waist (cm, optional)"><input class="input mono" type="number" step="0.1" placeholder="—" value=${waist} onInput=${(e) => setWaist(e.target.value)} /><//>
-    <${Field} label="Note"><textarea class="input ta" placeholder="Pump, look, mood…" value=${note} onInput=${(e) => setNote(e.target.value)}></textarea><//>
-    <button class="primary" onClick=${commit}>Save snapshot</button>
-    ${snaps.length > 0 && html`<div style=${{ marginTop: 20 }}><div class="label" style=${{ marginBottom: 10 }}>History</div>${snaps.map((s) => html`<div key=${s.id} class="snap-row"><div><div class="mono" style=${{ fontWeight: 700 }}>${s.kg != null ? kgTo(s.kg, u).toFixed(1) + " " + u : "—"} ${s.bodyFat != null ? html`<span class="muted sm">· ${s.bodyFat}% bf</span>` : ""}</div><div class="muted sm">${fmtShort(s.t)} ${s.note ? "· " + s.note : ""}</div></div><button class="xmini" onClick=${() => save((st) => ({ ...st, snapshots: st.snapshots.filter((x) => x.id !== s.id) }))}>${Ic.trash}</button></div>`)}</div>`}
-  <//>`;
-}
-
 function DoseHistory({ state, save, setModal }) {
   const logs = [...state.doseLogs].sort((a, b) => b.t - a.t);
   const rm = (id) => save((s) => ({ ...s, doseLogs: s.doseLogs.filter((x) => x.id !== id) }));
@@ -1048,6 +1165,7 @@ const Ic = {
   morning: html`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 3v3M5.6 8.6L4 7M18.4 8.6L20 7M2 17h20M7 17a5 5 0 0110 0"/></svg>`,
   noon: html`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg>`,
   evening: html`<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12.8A8 8 0 1111.2 3a6 6 0 009.8 9.8z"/></svg>`,
+  spark: html`<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="rgba(255,92,108,.8)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M3 17l5-6 4 3 6-8"/></svg>`,
   grid: svg(html`<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>`, { w: 23, h: 23, sw: 1.9 }),
   atom: html`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="10" ry="4.2"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(120 12 12)"/></svg>`,
   list: svg(html`<path d="M4 7h13M4 12h16M4 17h10"/>`, { w: 23, h: 23, sw: 2 }),
