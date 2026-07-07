@@ -367,6 +367,8 @@ const html = window.htm.bind(h);
 const DAY = 86400000;
 const CLS = {
   androgen: { label: "Androgen", color: "#3B82F6" },
+  sarm:     { label: "SARM", color: "#2DD4BF" },
+  peptide:  { label: "Peptide", color: "#818CF8" },
   glp:      { label: "Metabolic", color: "#30D158" },
   ai:       { label: "Ancillary", color: "#F5A524" },
   cosmetic: { label: "Cosmetic", color: "#A472F0" },
@@ -396,48 +398,140 @@ const BLOOD = [
 ];
 const ALL = [0, 1, 2, 3, 4, 5, 6];
 const LIBR = [
-  ["Testosterone Enanthate", "androgen", "injection", 250, "mg", 4.5, [1, 4], "morning"],
-  ["Testosterone Cypionate", "androgen", "injection", 250, "mg", 8, [1, 4], "morning"],
-  ["Testosterone Propionate", "androgen", "injection", 100, "mg", 0.8, [1, 3, 5], "morning"],
-  ["Testosterone Undecanoate", "androgen", "injection", 1000, "mg", 21, [0], "morning"],
-  ["Sustanon 250", "androgen", "injection", 250, "mg", 7, [1, 4], "morning"],
-  ["Nandrolone Decanoate (Deca)", "androgen", "injection", 200, "mg", 7, [1, 4], "morning"],
-  ["Nandrolone Phenylprop (NPP)", "androgen", "injection", 100, "mg", 2.7, [1, 3, 5], "morning"],
-  ["Boldenone Undecylenate (EQ)", "androgen", "injection", 300, "mg", 14, [1, 4], "morning"],
-  ["Trenbolone Acetate", "androgen", "injection", 50, "mg", 1, ALL, "morning"],
-  ["Trenbolone Enanthate", "androgen", "injection", 200, "mg", 5, [1, 4], "morning"],
-  ["Masteron Propionate", "androgen", "injection", 100, "mg", 1, [1, 3, 5], "morning"],
-  ["Masteron Enanthate", "androgen", "injection", 200, "mg", 5, [1, 4], "morning"],
-  ["Primobolan (Methenolone E)", "androgen", "injection", 200, "mg", 5.5, [1, 4], "morning"],
-  ["Dianabol (Dbol)", "androgen", "tablet", 30, "mg", 0.19, ALL, "morning"],
-  ["Anadrol", "androgen", "tablet", 50, "mg", 0.36, ALL, "morning"],
-  ["Winstrol (oral)", "androgen", "tablet", 30, "mg", 0.38, ALL, "morning"],
-  ["Anavar", "androgen", "tablet", 30, "mg", 0.4, ALL, "morning"],
-  ["Turinabol", "androgen", "tablet", 30, "mg", 0.67, ALL, "morning"],
-  ["Superdrol", "androgen", "tablet", 10, "mg", 0.33, ALL, "morning"],
-  ["Anastrozole (Arimidex)", "ai", "tablet", 0.5, "mg", 2, [1, 3, 5], "morning"],
-  ["Exemestane (Aromasin)", "ai", "tablet", 12.5, "mg", 1.1, [1, 3, 5], "morning"],
-  ["Letrozole", "ai", "tablet", 0.5, "mg", 2, [1, 3, 5], "morning"],
-  ["Tamoxifen (Nolvadex)", "ai", "tablet", 20, "mg", 5, ALL, "morning"],
-  ["Clomiphene (Clomid)", "ai", "tablet", 25, "mg", 5, ALL, "morning"],
-  ["Enclomiphene", "ai", "tablet", 12.5, "mg", 0.42, ALL, "morning"],
-  ["HCG", "other", "injection", 500, "IU", 1.4, [1, 4], "morning"],
-  ["Cabergoline", "other", "tablet", 0.25, "mg", 3, [1, 4], "evening"],
-  ["Semaglutide", "glp", "injection", 0.5, "mg", 7, [0], "evening"],
-  ["Tirzepatide", "glp", "injection", 2.5, "mg", 5, [0], "evening"],
-  ["Retatrutide", "glp", "injection", 4, "mg", 6, [0], "evening"],
-  ["Liraglutide", "glp", "injection", 1.2, "mg", 0.55, ALL, "evening"],
-  ["BPC-157", "other", "injection", 250, "mcg", 0.17, ALL, "morning"],
-  ["TB-500", "other", "injection", 2.5, "mg", 1, [0, 3], "morning"],
-  ["Ipamorelin", "other", "injection", 300, "mcg", 0.08, ALL, "evening"],
-  ["CJC-1295 (no DAC)", "other", "injection", 100, "mcg", 0.02, ALL, "evening"],
-  ["CJC-1295 DAC", "other", "injection", 2, "mg", 7, [0], "evening"],
-  ["Tesamorelin", "other", "injection", 1, "mg", 0.03, ALL, "evening"],
-  ["MOTS-c", "other", "injection", 10, "mg", 0.1, [1, 4], "morning"],
-  ["HGH (Somatropin)", "other", "injection", 2, "IU", 0.15, ALL, "morning"],
-  ["GHK-Cu", "cosmetic", "injection", 2, "mg", 0.12, ALL, "evening"],
-  ["Melanotan I", "cosmetic", "injection", 0.5, "mg", 0.05, ALL, "evening"],
-  ["Melanotan II", "cosmetic", "injection", 0.5, "mg", 0.04, ALL, "evening"],
+  // --- Testosterone & esters ---
+  ["Testosterone Enanthate","androgen","injection",250,"mg",4.5,[1,4],"morning"],
+  ["Testosterone Cypionate","androgen","injection",250,"mg",8,[1,4],"morning"],
+  ["Testosterone Propionate","androgen","injection",100,"mg",0.8,[1,3,5],"morning"],
+  ["Testosterone Phenylpropionate","androgen","injection",100,"mg",2.5,[1,4],"morning"],
+  ["Testosterone Isocaproate","androgen","injection",100,"mg",4,[1,4],"morning"],
+  ["Testosterone Decanoate","androgen","injection",100,"mg",15,[0],"morning"],
+  ["Testosterone Undecanoate","androgen","injection",1000,"mg",21,[0],"morning"],
+  ["Testosterone Suspension","androgen","injection",50,"mg",0.3,ALL,"morning"],
+  ["Sustanon 250","androgen","injection",250,"mg",7,[1,4],"morning"],
+  ["Omnadren","androgen","injection",250,"mg",7,[1,4],"morning"],
+  // --- Nandrolone ---
+  ["Nandrolone Decanoate (Deca)","androgen","injection",200,"mg",7,[1,4],"morning"],
+  ["Nandrolone Phenylprop (NPP)","androgen","injection",100,"mg",2.7,[1,3,5],"morning"],
+  // --- Boldenone ---
+  ["Boldenone Undecylenate (EQ)","androgen","injection",300,"mg",14,[1,4],"morning"],
+  ["Boldenone Cypionate","androgen","injection",200,"mg",8,[1,4],"morning"],
+  // --- Trenbolone ---
+  ["Trenbolone Acetate","androgen","injection",50,"mg",1,ALL,"morning"],
+  ["Trenbolone Enanthate","androgen","injection",200,"mg",5,[1,4],"morning"],
+  ["Parabolan (Tren Hex)","androgen","injection",100,"mg",8,[1,4],"morning"],
+  // --- Drostanolone ---
+  ["Masteron Propionate","androgen","injection",100,"mg",1,[1,3,5],"morning"],
+  ["Masteron Enanthate","androgen","injection",200,"mg",5,[1,4],"morning"],
+  // --- Other injectables ---
+  ["1-Testosterone (DHB)","androgen","injection",100,"mg",5,[1,4],"morning"],
+  ["Trestolone Acetate (MENT)","androgen","injection",25,"mg",0.5,ALL,"morning"],
+  ["Primobolan (Methenolone E)","androgen","injection",200,"mg",5.5,[1,4],"morning"],
+  ["Winstrol Depot (inj)","androgen","injection",50,"mg",1,ALL,"morning"],
+  // --- Oral AAS ---
+  ["Dianabol (Dbol)","androgen","tablet",30,"mg",0.19,ALL,"morning"],
+  ["Anadrol","androgen","tablet",50,"mg",0.36,ALL,"morning"],
+  ["Winstrol (oral)","androgen","tablet",30,"mg",0.38,ALL,"morning"],
+  ["Anavar","androgen","tablet",30,"mg",0.4,ALL,"morning"],
+  ["Turinabol","androgen","tablet",30,"mg",0.67,ALL,"morning"],
+  ["Superdrol","androgen","tablet",10,"mg",0.33,ALL,"morning"],
+  ["Primobolan (oral)","androgen","tablet",50,"mg",0.2,ALL,"morning"],
+  ["Proviron (Mesterolone)","androgen","tablet",25,"mg",0.5,ALL,"morning"],
+  ["Halotestin","androgen","tablet",10,"mg",0.4,ALL,"morning"],
+  ["Methyltestosterone","androgen","tablet",25,"mg",0.17,ALL,"morning"],
+  ["Cheque Drops (Mibolerone)","androgen","tablet",0.5,"mg",0.1,ALL,"morning"],
+  // --- SARMs ---
+  ["Ostarine (MK-2866)","sarm","tablet",20,"mg",1,ALL,"morning"],
+  ["Ligandrol (LGD-4033)","sarm","tablet",10,"mg",1.1,ALL,"morning"],
+  ["Testolone (RAD-140)","sarm","tablet",10,"mg",0.85,ALL,"morning"],
+  ["YK-11","sarm","tablet",10,"mg",0.4,ALL,"morning"],
+  ["S-23","sarm","tablet",20,"mg",0.5,ALL,"morning"],
+  ["Andarine (S4)","sarm","tablet",50,"mg",0.17,ALL,"morning"],
+  ["LGD-3303","sarm","tablet",10,"mg",0.6,ALL,"morning"],
+  ["AC-262536","sarm","tablet",15,"mg",0.5,ALL,"morning"],
+  // --- Recomp / PPAR / secretagogue orals ---
+  ["Cardarine (GW-501516)","other","tablet",10,"mg",0.9,ALL,"morning"],
+  ["Stenabolic (SR9009)","other","tablet",20,"mg",0.17,ALL,"morning"],
+  ["MK-677 (Ibutamoren)","peptide","tablet",20,"mg",1,ALL,"evening"],
+  ["5-Amino-1MQ","other","tablet",50,"mg",0.3,ALL,"morning"],
+  ["Tesofensine","other","tablet",0.5,"mg",8,ALL,"morning"],
+  // --- GLP-1 / metabolic ---
+  ["Semaglutide","glp","injection",0.5,"mg",7,[0],"evening"],
+  ["Tirzepatide","glp","injection",2.5,"mg",5,[0],"evening"],
+  ["Retatrutide","glp","injection",4,"mg",6,[0],"evening"],
+  ["Liraglutide","glp","injection",1.2,"mg",0.55,ALL,"evening"],
+  ["Cagrilintide","glp","injection",0.3,"mg",7,[0],"evening"],
+  ["Survodutide","glp","injection",2,"mg",5,[0],"evening"],
+  ["Mazdutide","glp","injection",3,"mg",5,[0],"evening"],
+  ["Dulaglutide","glp","injection",1.5,"mg",5,[0],"evening"],
+  ["Exenatide","glp","injection",10,"mcg",0.1,ALL,"morning"],
+  // --- GH / secretagogues / IGF ---
+  ["HGH (Somatropin)","peptide","injection",2,"IU",0.15,ALL,"morning"],
+  ["CJC-1295 (no DAC)","peptide","injection",100,"mcg",0.02,ALL,"evening"],
+  ["CJC-1295 DAC","peptide","injection",2,"mg",7,[0],"evening"],
+  ["Ipamorelin","peptide","injection",300,"mcg",0.08,ALL,"evening"],
+  ["Sermorelin","peptide","injection",300,"mcg",0.02,ALL,"evening"],
+  ["Tesamorelin","peptide","injection",1,"mg",0.03,ALL,"evening"],
+  ["Hexarelin","peptide","injection",100,"mcg",0.05,ALL,"evening"],
+  ["GHRP-2","peptide","injection",100,"mcg",0.05,ALL,"evening"],
+  ["GHRP-6","peptide","injection",100,"mcg",0.05,ALL,"evening"],
+  ["IGF-1 LR3","peptide","injection",50,"mcg",1,ALL,"morning"],
+  ["IGF-1 DES","peptide","injection",50,"mcg",0.1,ALL,"morning"],
+  ["PEG-MGF","peptide","injection",200,"mcg",2,[1,4],"morning"],
+  ["MGF","peptide","injection",200,"mcg",0.02,ALL,"morning"],
+  ["MOTS-c","peptide","injection",10,"mg",0.1,[1,4],"morning"],
+  // --- Healing / recovery peptides ---
+  ["BPC-157","peptide","injection",250,"mcg",0.17,ALL,"morning"],
+  ["TB-500 (Thymosin B4)","peptide","injection",2.5,"mg",1,[0,3],"morning"],
+  ["KPV","peptide","injection",250,"mcg",0.1,ALL,"morning"],
+  ["Thymosin Alpha-1","peptide","injection",1.5,"mg",0.1,[1,4],"morning"],
+  ["LL-37","peptide","injection",100,"mcg",0.1,ALL,"morning"],
+  ["Epithalon","peptide","injection",10,"mg",0.1,ALL,"morning"],
+  ["Follistatin 344","peptide","injection",100,"mcg",0.2,ALL,"morning"],
+  ["ARA-290","peptide","injection",2,"mg",0.1,ALL,"morning"],
+  ["DSIP","peptide","injection",100,"mcg",0.1,ALL,"evening"],
+  ["Semax","peptide","nasal",300,"mcg",0.05,ALL,"morning"],
+  ["Selank","peptide","nasal",300,"mcg",0.05,ALL,"morning"],
+  ["AOD-9604","peptide","injection",300,"mcg",0.2,ALL,"morning"],
+  ["HGH Frag 176-191","peptide","injection",250,"mcg",0.1,ALL,"morning"],
+  // --- Cosmetic / tanning / libido ---
+  ["GHK-Cu","cosmetic","injection",2,"mg",0.12,ALL,"evening"],
+  ["Melanotan I","cosmetic","injection",0.5,"mg",0.05,ALL,"evening"],
+  ["Melanotan II","cosmetic","injection",0.5,"mg",0.04,ALL,"evening"],
+  ["PT-141 (Bremelanotide)","cosmetic","injection",1,"mg",0.11,ALL,"evening"],
+  ["Kisspeptin-10","peptide","injection",100,"mcg",0.02,ALL,"morning"],
+  // --- Ancillaries / AI / SERM / PCT ---
+  ["Anastrozole (Arimidex)","ai","tablet",0.5,"mg",2,[1,3,5],"morning"],
+  ["Exemestane (Aromasin)","ai","tablet",12.5,"mg",1.1,[1,3,5],"morning"],
+  ["Letrozole (Femara)","ai","tablet",0.5,"mg",2,[1,3,5],"morning"],
+  ["Tamoxifen (Nolvadex)","ai","tablet",20,"mg",5,ALL,"morning"],
+  ["Clomiphene (Clomid)","ai","tablet",25,"mg",5,ALL,"morning"],
+  ["Enclomiphene","ai","tablet",12.5,"mg",0.42,ALL,"morning"],
+  ["Raloxifene","ai","tablet",60,"mg",1.1,ALL,"morning"],
+  ["Toremifene","ai","tablet",30,"mg",5,ALL,"morning"],
+  ["HCG","ai","injection",500,"IU",1.4,[1,4],"morning"],
+  ["HMG","ai","injection",75,"IU",0.2,[1,4],"morning"],
+  ["Gonadorelin","ai","injection",100,"mcg",0.02,ALL,"morning"],
+  ["Cabergoline","ai","tablet",0.25,"mg",3,[1,4],"evening"],
+  ["Pramipexole","ai","tablet",0.25,"mg",0.33,ALL,"evening"],
+  // --- Health / organ support / hair / thyroid / cutting ---
+  ["Finasteride","other","tablet",1,"mg",0.3,ALL,"morning"],
+  ["Dutasteride","other","tablet",0.5,"mg",35,[0],"morning"],
+  ["Minoxidil (oral)","other","tablet",2.5,"mg",0.17,ALL,"morning"],
+  ["RU58841","other","topical",50,"mg",0.2,ALL,"morning"],
+  ["Isotretinoin (Accutane)","other","tablet",20,"mg",0.8,ALL,"morning"],
+  ["Telmisartan","other","tablet",40,"mg",1,ALL,"morning"],
+  ["Metformin","other","tablet",500,"mg",0.25,ALL,"morning"],
+  ["Berberine","other","tablet",500,"mg",0.2,ALL,"morning"],
+  ["TUDCA","other","tablet",500,"mg",0.2,ALL,"morning"],
+  ["NAC","other","tablet",600,"mg",0.25,ALL,"morning"],
+  ["Clenbuterol","other","tablet",40,"mcg",1.4,ALL,"morning"],
+  ["Liothyronine (T3)","other","tablet",25,"mcg",1,ALL,"morning"],
+  ["Levothyroxine (T4)","other","tablet",100,"mcg",7,ALL,"morning"],
+  ["Albuterol","other","tablet",4,"mg",0.2,ALL,"morning"],
+  ["Yohimbine HCl","other","tablet",5,"mg",0.2,ALL,"morning"],
+  ["Ketotifen","other","tablet",2,"mg",0.9,ALL,"evening"],
+  ["Insulin (rapid)","other","injection",5,"IU",0.1,ALL,"morning"],
+  ["Insulin (long)","other","injection",10,"IU",0.5,ALL,"evening"],
 ].map(([name, cls, form, dose, unit, halflife, days, period]) => ({ name, cls, form, dose, unit, halflife, days, period }));
 
 /* helpers */
@@ -476,21 +570,13 @@ const load = () => { try { const r = localStorage.getItem(KEY); return r ? JSON.
 const persist = (s) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} };
 
 function seed() {
-  const s = startOfDay(now() - 47 * DAY);
   return {
-    units: "kg", goalWeight: 74, openDays: [startOfDay(now())], recordStreak: 1,
-    protocols: [
-      { id: "p_test", name: "Testosterone Enanthate", cls: "androgen", form: "injection", dose: 250, unit: "mg", halflife: 4.5, days: [1, 4], period: "morning", status: "active", start: s },
-      { id: "p_reta", name: "Retatrutide", cls: "glp", form: "injection", dose: 6, unit: "mg", halflife: 6, days: [0], period: "evening", status: "active", start: s },
-      { id: "p_arim", name: "Anastrozole", cls: "ai", form: "tablet", dose: 0.5, unit: "mg", halflife: 2, days: [1, 3, 5], period: "morning", status: "active", start: s },
-      { id: "p_ghk", name: "GHK-Cu", cls: "cosmetic", form: "injection", dose: 2, unit: "mg", halflife: 0.12, days: ALL, period: "evening", status: "active", start: s },
-      { id: "p_mt1", name: "Melanotan I", cls: "cosmetic", form: "injection", dose: 0.5, unit: "mg", halflife: 0.05, days: ALL, period: "evening", status: "active", start: s },
-    ],
-    doseLogs: [],
-    weights: [],
-    bp: [], notes: [], snapshots: [], inventory: [], bloodwork: { date: "", markers: {}, custom: [] }, bloodPanels: [],
+    units: "kg", goalWeight: null, openDays: [], recordStreak: 0,
+    protocols: [], doseLogs: [], weights: [], bp: [], notes: [], snapshots: [], inventory: [],
+    bloodwork: { date: "", markers: {}, custom: [] }, bloodPanels: [],
   };
 }
+
 function migrate(s) {
   s.units = s.units || "kg";
   s.protocols = (s.protocols || []).map((p) => ({ ...p, form: formOf(p), period: periodOf(p), status: p.status || "active", start: p.start || startOfDay(now()) }));
@@ -893,7 +979,7 @@ function AddCompound({ modal, save, setModal }) {
   const commit = () => { const rec = { ...f, start: startOfDay(new Date(startStr).getTime()) }; save((s) => ({ ...s, protocols: editing ? s.protocols.map((x) => x.id === rec.id ? rec : x) : [...s.protocols, rec] })); setModal(null); };
   const del = () => { save((s) => ({ ...s, protocols: s.protocols.filter((x) => x.id !== f.id) })); setModal(null); };
   const fIco = (k) => k === "injection" ? Ic.syringe : FORMS[k].group === "Orals" ? Ic.pill : Ic.drop;
-  const matches = LIBR.filter((it) => it.name.toLowerCase().includes(libQ.toLowerCase())).slice(0, 40);
+  const matches = LIBR.filter((it) => it.name.toLowerCase().includes(libQ.toLowerCase())).slice(0, 60);
   return html`<${Sheet} title=${editing ? "Edit compound" : "Add compound"} onClose=${() => setModal(null)}>
     ${!editing && html`<div class="lib">
       <button class="lib-toggle" onClick=${() => setLibOpen(!libOpen)}>${Ic.book} Choose from library ${libOpen ? "▲" : "▼"}</button>
